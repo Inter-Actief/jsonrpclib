@@ -85,6 +85,22 @@ This is (obviously) taken from a console session.
 	11
 	{'key': 'value'}
 	# Note that there are only two responses -- this is according to spec.
+	
+JSONRPC does not define any authorization methods. Sometimes you want to do 
+this with cookies. This class supports simple cookies.
+
+	>>> import jsonrpclib
+	>>> server = jsonrpclib.Server('http://localhost:8080')
+	>>> server.login("user", "password")
+	true
+	>>> print server.is_authorized()
+	true
+	>>> server.logout()
+	true
+	>>> print server.is_authorized()
+	false
+	
+You can enable/disable cookies with config.use_cookies. Defaults to true.
 
 If you need 1.0 functionality, there are a bunch of places you can pass that 
 in, although the best is just to change the value on 
