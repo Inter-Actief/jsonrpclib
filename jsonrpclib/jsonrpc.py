@@ -52,6 +52,7 @@ from xmlrpclib import Transport as XMLTransport
 from xmlrpclib import SafeTransport as XMLSafeTransport
 from xmlrpclib import ServerProxy as XMLServerProxy
 from xmlrpclib import _Method as XML_Method
+from Cookie import SimpleCookie
 import time
 import string
 import random
@@ -115,18 +116,60 @@ class TransportMixIn(object):
     user_agent = config.user_agent
     # for Python 2.7 support
     _connection = None
+    _response = None 
+    _cookies = SimpleCookie()
 
     def send_content(self, connection, request_body):
         connection.putheader("Content-Type", "application/json-rpc")
         connection.putheader("Content-Length", str(len(request_body)))
+        
+        if config.use_cookies and len(self._cookies) != 0:
+            cookie = self._cookies.output(attrs=[], header="")
+            connection.putheader("Cookie", cookie)
+        
         connection.endheaders()
+        
         if request_body:
             connection.send(request_body)
+            self._cache_connection = connection
+        
+    def parse_headers(self, headers):
+        if not config.use_cookies:
+            return
+        
+        for header, value in headers:
+            if header == 'set-cookie':
+                self._cookies.load(value)
 
     def getparser(self):
         target = JSONTarget()
         return JSONParser(target), target
 
+    # Python 2.7 compatibility
+    def parse_response(self, response):
+        self.parse_headers(response.getheaders())
+        return super(TransportMixIn, self).parse_response(response)
+
+    # Python 2.6 compatibility
+    def make_connection(self, host):
+        connection = super(TransportMixIn, self).make_connection(host)
+        
+        # Intercept the connection and wrap the getreply() method to
+        # get the headers
+        if hasattr(connection, "getreply"):
+            connection.getreply = self._wrap_reply(connection.getreply)
+        
+        return connection
+    
+    # Python 2.6 compatibility
+    def _wrap_reply(self, func):
+        def wrapper():
+            reply = func()
+            status, code, message = reply
+            self.parse_headers(message.items())
+            return reply
+        return wrapper
+        
 class JSONParser(object):
     def __init__(self, target):
         self.target = target

@@ -30,6 +30,8 @@ class Config(object):
         '.'.join([str(ver) for ver in sys.version_info[0:3]])
     # User agent to use for calls.
     _instance = None
+    # Enable cookies
+    use_cookies = True
     
     @classmethod
     def instance(cls):
