@@ -392,20 +392,32 @@ class MultiCallIterator(object):
 
 class MultiCall(object):
     
-    def __init__(self, server):
+    def __init__(self, server, callback=None):
         self._server = server
+        self._callback = callback
         self._job_list = []
 
     def _request(self):
         if len(self._job_list) < 1:
             # Should we alert? This /is/ pretty obvious.
             return
-        request_body = '[ %s ]' % ','.join([job.request() for
-                                          job in self._job_list])
+        
+        storage = {}
+        for job in self._job_list:
+            rpcid = random_id(length=12)
+            storage[rpcid] = job
+            
+        request_body = '[ %s ]' % ','.join(v.request(rpcid=k) for k, v in storage.items())
         responses = self._server._run_request(request_body)
         del self._job_list[:]
         if not responses:
             responses = []
+        else:
+            if self._callback != None:
+                for response in responses:
+                    if storage.has_key(response["id"]):
+                        self._callback(storage[response["id"]], response)
+                
         return MultiCallIterator(responses)
 
     @property
