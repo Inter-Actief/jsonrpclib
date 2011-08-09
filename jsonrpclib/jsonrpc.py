@@ -476,7 +476,7 @@ class Payload(dict):
         if not self.id:
             self.id = random_id()
         request = { 'id':self.id, 'method':method }
-        if params:
+        if params or self.version < 1.1:
             request['params'] = params
         if self.version >= 2:
             request['jsonrpc'] = str(self.version)
