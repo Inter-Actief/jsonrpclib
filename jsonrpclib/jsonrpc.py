@@ -124,7 +124,7 @@ class TransportMixIn(object):
         connection.putheader("Content-Length", str(len(request_body)))
         
         if config.use_cookies and len(self._cookies) != 0:
-            cookie = self._cookies.output(attrs=[], header="")
+            cookie = self._cookies.output(attrs=[], header="", sep=';')
             connection.putheader("Cookie", cookie)
         
         connection.endheaders()
