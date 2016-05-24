@@ -1,12 +1,14 @@
 import sys
 
+
 class LocalClasses(dict):
     def add(self, cls):
         self[cls.__name__] = cls
 
+
 class Config(object):
     """
-    This is pretty much used exclusively for the 'jsonclass' 
+    This is pretty much used exclusively for the 'jsonclass'
     functionality... set use_jsonclass to False to turn it off.
     You can change serialize_method and ignore_attribute, or use
     the local_classes.add(class) to include "local" classes.
@@ -15,7 +17,7 @@ class Config(object):
     # Change to False to keep __jsonclass__ entries raw.
     serialize_method = '_serialize'
     # The serialize_method should be a string that references the
-    # method on a custom class object which is responsible for 
+    # method on a custom class object which is responsible for
     # returning a tuple of the constructor arguments and a dict of
     # attributes.
     ignore_attribute = '_ignore'
@@ -32,7 +34,7 @@ class Config(object):
     _instance = None
     # Enable cookies
     use_cookies = True
-    
+
     @classmethod
     def instance(cls):
         if not cls._instance:
