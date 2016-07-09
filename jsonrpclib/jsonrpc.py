@@ -47,11 +47,11 @@ See http://code.google.com/p/jsonrpclib/ for more info.
 """
 
 import types
-from xmlrpclib import Transport as XMLTransport
-from xmlrpclib import SafeTransport as XMLSafeTransport
-from xmlrpclib import ServerProxy as XMLServerProxy
-from xmlrpclib import _Method as XML_Method
-from Cookie import SimpleCookie
+from xmlrpc.client import Transport as XMLTransport
+from xmlrpc.client import SafeTransport as XMLSafeTransport
+from xmlrpc.client import ServerProxy as XMLServerProxy
+from xmlrpc.client import _Method as XML_Method
+from http.cookies import SimpleCookie
 import time
 import string
 import random
@@ -209,7 +209,7 @@ class SafeTransport(TransportMixIn, XMLSafeTransport):
         TransportMixIn.__init__(self)
         XMLSafeTransport.__init__(self)
 
-from httplib import HTTP, HTTPConnection
+from http.client import HTTPConnection
 from socket import socket
 
 USE_UNIX_SOCKETS = False
@@ -227,14 +227,11 @@ if (USE_UNIX_SOCKETS):
             self.sock = socket(AF_UNIX, SOCK_STREAM)
             self.sock.connect(self.host)
 
-    class UnixHTTP(HTTP):
-        _connection_class = UnixHTTPConnection
-
     class UnixTransport(TransportMixIn, XMLTransport):
 
         def make_connection(self, host):
             host, extra_headers, x509 = self.get_host_info(host)
-            return UnixHTTP(host)
+            return UnixHTTPConnection(host)
 
 
 class ServerProxy(XMLServerProxy):
@@ -245,11 +242,11 @@ class ServerProxy(XMLServerProxy):
 
     def __init__(self, uri, transport=None, encoding=None,
                  verbose=0, version=None):
-        import urllib
+        from urllib.request import  splittype, splithost
         if not version:
             version = config.version
         self.__version = version
-        schema, uri = urllib.splittype(uri)
+        schema, uri = splittype(uri)
         if schema not in ('http', 'https', 'unix'):
             raise IOError('Unsupported JSON-RPC protocol.')
         if schema == 'unix':
@@ -259,7 +256,7 @@ class ServerProxy(XMLServerProxy):
             self.__host = uri
             self.__handler = '/'
         else:
-            self.__host, self.__handler = urllib.splithost(uri)
+            self.__host, self.__handler = splithost(uri)
             if not self.__handler:
                 # Not sure if this is in the JSON spec?
                 # self.__handler = '/'
@@ -503,7 +500,7 @@ class Payload(dict):
     def request(self, method, params=None):
         if params is None:
             params = []
-        if type(method) not in types.StringTypes:
+        if not isinstance(method, str):
             raise ValueError('Method name must be a string.')
         if not self.id:
             self.id = random_id()
@@ -550,7 +547,7 @@ def dumps(
     if not version:
         version = config.version
     valid_params = (tuple, list, dict)
-    if methodname in types.StringTypes and \
+    if methodname in [str] and \
             type(params) not in valid_params and \
             not isinstance(params, Fault):
         """
@@ -567,7 +564,7 @@ def dumps(
         response = payload.error(params.faultCode, params.faultString)
         return jdumps(response, encoding=encoding)
 
-    if type(methodname) not in types.StringTypes and \
+    if not isinstance(methodname, str) and \
             methodresponse is not True:
         raise ValueError(
             'Method name must be a string, or methodresponse must '
