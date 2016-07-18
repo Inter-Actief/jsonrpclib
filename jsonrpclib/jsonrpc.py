@@ -91,13 +91,13 @@ class UnixSocketMissing(Exception):
 # JSON Abstractions
 
 
-def jdumps(obj, encoding='utf-8'):
+def jdumps(obj):
     # Do 'serialize' test at some point for other classes
     global cjson
     if cjson:
         return cjson.encode(obj)
     else:
-        return json.dumps(obj, encoding=encoding)
+        return json.dumps(obj)
 
 
 def jloads(json_string):
@@ -240,9 +240,8 @@ class ServerProxy(XMLServerProxy):
     so much of it does the serialization.
     """
 
-    def __init__(self, uri, transport=None, encoding=None,
-                 verbose=0, version=None):
-        from urllib.request import  splittype, splithost
+    def __init__(self, uri, transport=None, verbose=0, version=None):
+        from urllib.request import splittype, splithost
         if not version:
             version = config.version
         self.__version = version
@@ -269,19 +268,16 @@ class ServerProxy(XMLServerProxy):
             else:
                 transport = Transport()
         self.__transport = transport
-        self.__encoding = encoding
         self.__verbose = verbose
 
     def _request(self, methodname, params, rpcid=None):
-        request = dumps(params, methodname, encoding=self.__encoding,
-                        rpcid=rpcid, version=self.__version)
+        request = dumps(params, methodname, rpcid=rpcid, version=self.__version)
         response = self._run_request(request)
         check_for_errors(response)
         return response['result']
 
     def _request_notify(self, methodname, params, rpcid=None):
-        request = dumps(params, methodname, encoding=self.__encoding,
-                        rpcid=rpcid, version=self.__version, notify=True)
+        request = dumps(params, methodname, rpcid=rpcid, version=self.__version, notify=True)
         response = self._run_request(request, notify=True)
         check_for_errors(response)
         return
@@ -370,9 +366,8 @@ class MultiCallMethod(object):
         else:
             self.params = args
 
-    def request(self, encoding=None, rpcid=None):
-        return dumps(self.params, self.method, version=2.0,
-                     encoding=encoding, rpcid=rpcid, notify=self.notify)
+    def request(self, rpcid=None):
+        return dumps(self.params, self.method, version=2.0, rpcid=rpcid, notify=self.notify)
 
     def __repr__(self):
         return '%s' % self.request()
@@ -475,9 +470,7 @@ class Fault(object):
             version = config.version
         if rpcid:
             self.rpcid = rpcid
-        return dumps(
-            self, methodresponse=True, rpcid=self.rpcid, version=version
-        )
+        return dumps(self, methodresponse=True, rpcid=self.rpcid, version=version)
 
     def __repr__(self):
         return '<Fault %s: %s>' % (self.faultCode, self.faultString)
@@ -537,9 +530,7 @@ class Payload(dict):
         return error
 
 
-def dumps(
-        params=[], methodname=None, methodresponse=None,
-        encoding=None, rpcid=None, version=None, notify=None):
+def dumps(params=[], methodname=None, methodresponse=None, rpcid=None, version=None, notify=None):
     """
     This differs from the Python implementation in that it implements
     the rpcid argument since the 2.0 spec requires it for responses.
@@ -558,11 +549,9 @@ def dumps(
                         'instance.')
     # Begin parsing object
     payload = Payload(rpcid=rpcid, version=version)
-    if not encoding:
-        encoding = 'utf-8'
     if type(params) is Fault:
         response = payload.error(params.faultCode, params.faultString)
-        return jdumps(response, encoding=encoding)
+        return jdumps(response)
 
     if not isinstance(methodname, str) and \
             methodresponse is not True:
@@ -577,13 +566,13 @@ def dumps(
         if rpcid is None:
             raise ValueError('A method response must have an rpcid.')
         response = payload.response(params)
-        return jdumps(response, encoding=encoding)
+        return jdumps(response)
     request = None
     if notify:
         request = payload.notify(methodname, params)
     else:
         request = payload.request(methodname, params)
-    return jdumps(request, encoding=encoding)
+    return jdumps(request)
 
 
 def loads(data):

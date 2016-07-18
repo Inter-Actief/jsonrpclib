@@ -104,10 +104,7 @@ class SimpleJSONRPCDispatcher(xmlrpc.server.SimpleXMLRPCDispatcher):
             # It's a notification
             return None
         try:
-            response = jsonrpclib.dumps(response,
-                                        methodresponse=True,
-                                        rpcid=request['id']
-                                        )
+            response = jsonrpclib.dumps(response, methodresponse=True, rpcid=request['id'])
             return response
         except:
             exc_type, exc_value, exc_tb = sys.exc_info()
