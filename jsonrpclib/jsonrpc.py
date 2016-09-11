@@ -135,7 +135,7 @@ class TransportMixIn(object):
         connection.endheaders()
 
         if request_body:
-            connection.send(request_body)
+            connection.send(request_body.encode())
             self._cache_connection = connection
 
     def parse_headers(self, headers):
